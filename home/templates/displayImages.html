@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load plotly_dash %}
+
+{% block content %}
+<h1>Processed Data: {{ experiment.name }}</h1>
+<div style="display: flex; justify-content: space-between;">
+    <div style="flex: 1;">
+        <h2>Size Segregated Maps</h2>
+        {% plotly_app name="YourDashApp" ratio=.6 %}
+    </div>
+    <div style="flex: 1;">
+        <h2>Total NP Count</h2>
+        {% plotly_app name="YourDashApp2" ratio=.6 %}
+    </div>
+</div>
+{% endblock %}
+
+    <!-- If you don't add a 'ratio=1, it doesn't display properly. Don't know why. 
+        Also,The ratio value represents the width relative to the height, so a ratio of 1.5 means the width is 1.5 times the height. 
+        In other words, it's a 3:2 aspect ratio. -->

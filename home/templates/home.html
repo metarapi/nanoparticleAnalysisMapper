@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+{% load static %}
+<link rel="stylesheet" href="{% static 'home/css/bootstrap.min.css' %}">
+
+<body>
+
+    <table>
+        <tr>
+            <th>Experiment Name</th>
+            <th>Experiment Description</th>
+            <th>.csv Files</th>
+        </tr>
+        <tr>
+        {% for experiment in form %}
+            <td>{{ experiment }}</td>
+        {% endfor %}
+        </tr>
+
+</body>

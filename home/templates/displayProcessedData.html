@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Experiments</title>
+</head>
+<body>
+    {% block content %}
+    <h1>Experiments</h1>
+    <!-- This part handles the messaging 
+    I'm using flexbox -->
+
+    <!-- add style="display:none" -->
+    <div id="process-bar-background" class="progress bg-primary bg-oppacity-25" data-bs-theme="dark" style="display: none">
+        <div id="process-bar" class="progress-bar bg-warning" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="display: none">0%</div>
+    </div>    
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="align-middle">Name</th>
+                <th class="align-middle">Description</th>
+                <th>
+                    <span style="display: flex; gap: 12px;">
+                        <label style="width: 100px;">Gas blank start (s)</label>
+                        <label for="formFile" class="form-label" style="width: 100px;">Gas blank end (s)</label>
+                        <label for="formFile" class="form-label" style="width: 100px;">Number of pixels</label>
+                        <label for="formFile" class="form-label" style="width: 100px;">Calibration</label>
+                </th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <!-- This is the part of the table with the already uploaded experiments -->
+        <tbody>
+            {% for experiment in experiments %}
+            <tr>
+                <td class="align-middle">{{ experiment.name }}</td>
+                <td class="align-middle">{{ experiment.description }}</td>
+                <td colspan="6" style="display: flex; align-items: center; justify-content: space-between; gap: 12x;">
+                    <form method="post" action="{% url 'process_data_button' experiment.id %}" style="display: flex; align-items: center; gap: 12px;">
+                        {% csrf_token %}
+                        <input type="number" name="gas_blank_start" data-bs-theme="dark" min="0" step=".0001" value="{{ experiment.gasBlankStart }}" style="width: 100px;"/>
+                        <input type="number" name="gas_blank_end" data-bs-theme="dark" min="0" step=".0001" value="{{ experiment.gasBlankEnd }}" style="width: 100px;"/>
+                        <input type="number" name="number_of_pixels" data-bs-theme="dark" min="1" step="1" value="{{ experiment.numberOfPixels }}" style="width: 100px;"/>
+                        <input type="hidden" name="experiment_id" value="{{ experiment.id }}">
+                        <div>
+                            <input id="formCheck-1-{{ experiment.id }}" class="form-check-input" type="radio" name="type" value="calCurve" 
+                            onclick="if(this.checked){document.getElementById('text1-{{ experiment.id }}').removeAttribute('disabled'); document.getElementById('text2-{{ experiment.id }}').removeAttribute('disabled'); document.getElementById('sel1-{{ experiment.id }}').setAttribute('disabled', true); document.getElementById('sel2-{{ experiment.id }}').setAttribute('disabled', true)}">Calibration Curve
+                            <div style="display: flex; flex-direction: row;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <input type="number" id="text1-{{ experiment.id }}" name="slope" data-bs-theme="dark" step=".0001" value="{{ experiment.slope }}" style="width: 75px;" disabled>
+                                    <input type="number" id="text2-{{ experiment.id }}" name="intercept" data-bs-theme="dark" step=".0001" value="{{ experiment.intercept }}" style="width: 75px;" disabled>
+                                </div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <label for="text1-{{ experiment.id }}" style="font-size: 0.9em;">Slope</label>
+                                    <label for="text2-{{ experiment.id }}" style="font-size: 0.9em;">Intercept</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <input id="formCheck-2-{{ experiment.id }}" class="form-check-input" type="radio" name="type" value="singlePoint" 
+                            onclick="if(this.checked){document.getElementById('sel1-{{ experiment.id }}').removeAttribute('disabled'); document.getElementById('sel2-{{ experiment.id }}').removeAttribute('disabled'); document.getElementById('text1-{{ experiment.id }}').setAttribute('disabled', true); document.getElementById('text2-{{ experiment.id }}').setAttribute('disabled', true)}">Single Point Calibration
+                            <div style="display: flex; flex-direction: row;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <input type="number" id="sel1-{{ experiment.id }}" name="np_size" data-bs-theme="dark" step="0.0001" value="{{ experiment.npSize }}" style="width: 75px;" disabled>
+                                    <input type="number" id="sel2-{{ experiment.id }}" name="signal_median" data-bs-theme="dark" step="0.0001" value="{{ experiment.signalMedian }}" style="width: 75px;" disabled>
+                                </div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <label for="sel1-{{ experiment.id }}" style="font-size: 0.9em;">NP Size (nm)</label>
+                                    <label for="sel2-{{ experiment.id }}" style="font-size: 0.9em;">Signal Median (&#8731;cts)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-check" style="margin-left: 12px;">
+                            <input id="formCheck-1" name="convert_to_counts" class="form-check-input" type="checkbox" value="on" checked>
+                            <label class="form-check-label" for="formCheck-1">Convert to counts</label>
+                        </div>
+                        <button id="process-button-{{ experiment.id }}" class="btn btn-warning process-button" type="submit" {% if experiment.processed %}disabled{% endif %}>Process Data</button>
+                    </form>
+                    <td class="align-middle">
+                        <form method="post" action="{% url 'display_experiment' experiment.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="experiment_id" value="{{ experiment.id }}">
+                            <button id="displayExperiment" class="btn btn-info" type="submit" {% if not experiment.processed %}disabled{% endif %}>Display Images</button>
+                        </form>
+                    </td>
+                    <td class="align-middle">
+                        <form method="post" action="{% url 'delete_experiment' experiment.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="experiment_id" value="{{ experiment.id }}">
+                            <button id="removeEntry" class="btn btn-success" type="submit" {% if not experiment.processed %}disabled{% endif %}>Download Images</button>
+                        </form>
+                    </td>
+                </td>
+            </tr>
+            {% endfor %}    
+        </tbody>
+        </table>
+    </div>
+    
+    <script>
+        var buttons = document.querySelectorAll('.process-button');
+        buttons.forEach(function(button) {
+            console.log(button);
+            button.addEventListener('click', function() {
+                console.log("Button clicked: " + button.id);
+                var source = new EventSource('/process_sse_view/');
+                source.onmessage = function(event) {
+                    console.log(event.data);
+                    var progressBar = document.getElementById("process-bar");
+                    var progressBarBackground = document.getElementById("process-bar-background");
+                    button.disabled = true;
+                    button.textContent = "Processing...";
+
+                    if (event.data == "FAILED") {
+                        progressBar.style.display = "none";
+                        progressBarBackground.style.display = "none";
+                        button.disabled = false;
+                        console.log("Closing connection");
+                        source.close();
+                    } else if (event.data == "STARTED") {
+                        progressBar.style.display = "block";
+                        progressBarBackground.style.display = "block";
+                        progressBar.style.width = "0%";
+                        progressBar.textContent = "0%";
+                    } else if (event.data !== "None") {
+                        progressBar.style.display = "block";
+                        progressBarBackground.style.display = "block";
+                        progressBar.style.width = event.data + "%";
+                        progressBar.textContent = event.data + "%";
+                    }
+
+                    if (event.data == 100) {
+                        button.disabled = false;
+                        source.close();
+                        setTimeout(function() {
+                            progressBar.style.display = "none";
+                            progressBarBackground.style.display = "none";
+                        }, 1000);
+                    }
+                
+                }
+            });
+        });
+    </script>
+    
+
+    {% endblock %}
+</body>
+</html>

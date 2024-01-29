@@ -1,0 +1,259 @@
+How to deploy with ASGI¶
+As well as WSGI, Django also supports deploying on ASGI, the emerging Python standard for asynchronous web servers and applications.
+
+Django’s startproject management command sets up a default ASGI configuration for you, which you can tweak as needed for your project, and direct any ASGI-compliant application server to use.
+
+Django includes getting-started documentation for the following ASGI servers:
+
+How to use Django with Daphne
+How to use Django with Hypercorn
+How to use Django with Uvicorn
+The application object¶
+Like WSGI, ASGI has you supply an application callable which the application server uses to communicate with your code. It’s commonly provided as an object named application in a Python module accessible to the server.
+
+The startproject command creates a file <project_name>/asgi.py that contains such an application callable.
+
+It’s not used by the development server (runserver), but can be used by any ASGI server either in development or in production.
+
+ASGI servers usually take the path to the application callable as a string; for most Django projects, this will look like myproject.asgi:application.
+
+Warning
+
+While Django’s default ASGI handler will run all your code in a synchronous thread, if you choose to run your own async handler you must be aware of async-safety.
+
+Do not call blocking synchronous functions or libraries in any async code. Django prevents you from doing this with the parts of Django that are not async-safe, but the same may not be true of third-party apps or Python libraries.
+
+Configuring the settings module¶
+When the ASGI server loads your application, Django needs to import the settings module — that’s where your entire application is defined.
+
+Django uses the DJANGO_SETTINGS_MODULE environment variable to locate the appropriate settings module. It must contain the dotted path to the settings module. You can use a different value for development and production; it all depends on how you organize your settings.
+
+If this variable isn’t set, the default asgi.py sets it to mysite.settings, where mysite is the name of your project.
+
+Applying ASGI middleware¶
+To apply ASGI middleware, or to embed Django in another ASGI application, you can wrap Django’s application object in the asgi.py file. For example:
+
+from some_asgi_library import AmazingMiddleware
+
+application = AmazingMiddleware(application)
+
+
+How to use Django with Daphne¶
+Daphne is a pure-Python ASGI server for UNIX, maintained by members of the Django project. It acts as the reference server for ASGI.
+
+Installing Daphne¶
+You can install Daphne with pip:
+
+python -m pip install daphne
+Running Django in Daphne¶
+When Daphne is installed, a daphne command is available which starts the Daphne server process. At its simplest, Daphne needs to be called with the location of a module containing an ASGI application object, followed by what the application is called (separated by a colon).
+
+For a typical Django project, invoking Daphne would look like:
+
+daphne myproject.asgi:application
+This will start one process listening on 127.0.0.1:8000. It requires that your project be on the Python path; to ensure that run this command from the same directory as your manage.py file.
+
+Integration with runserver¶
+Daphne provides a runserver command to serve your site under ASGI during development.
+
+This can be enabled by adding daphne to the start of your INSTALLED_APPS and adding an ASGI_APPLICATION setting pointing to your ASGI application object:
+
+INSTALLED_APPS = [
+    "daphne",
+    ...,
+]
+
+ASGI_APPLICATION = "myproject.asgi.application"
+
+
+How to use Django with Hypercorn¶
+Hypercorn is an ASGI server that supports HTTP/1, HTTP/2, and HTTP/3 with an emphasis on protocol support.
+
+Installing Hypercorn¶
+You can install Hypercorn with pip:
+
+python -m pip install hypercorn
+Running Django in Hypercorn¶
+When Hypercorn is installed, a hypercorn command is available which runs ASGI applications. Hypercorn needs to be called with the location of a module containing an ASGI application object, followed by what the application is called (separated by a colon).
+
+For a typical Django project, invoking Hypercorn would look like:
+
+hypercorn myproject.asgi:application
+This will start one process listening on 127.0.0.1:8000. It requires that your project be on the Python path; to ensure that run this command from the same directory as your manage.py file.
+
+For more advanced usage, please read the Hypercorn documentation.
+
+How to use Django with Uvicorn¶
+Uvicorn is an ASGI server based on uvloop and httptools, with an emphasis on speed.
+
+Installing Uvicorn¶
+You can install Uvicorn with pip:
+
+python -m pip install uvicorn
+Running Django in Uvicorn¶
+When Uvicorn is installed, a uvicorn command is available which runs ASGI applications. Uvicorn needs to be called with the location of a module containing an ASGI application object, followed by what the application is called (separated by a colon).
+
+For a typical Django project, invoking Uvicorn would look like:
+
+python -m uvicorn myproject.asgi:application
+This will start one process listening on 127.0.0.1:8000. It requires that your project be on the Python path; to ensure that run this command from the same directory as your manage.py file.
+
+In development mode, you can add --reload to cause the server to reload any time a file is changed on disk.
+
+For more advanced usage, please read the Uvicorn documentation.
+
+Deploying Django using Uvicorn and Gunicorn¶
+Gunicorn is a robust web server that implements process monitoring and automatic restarts. This can be useful when running Uvicorn in a production environment.
+
+To install Uvicorn and Gunicorn, use the following:
+
+python -m pip install uvicorn gunicorn
+Then start Gunicorn using the Uvicorn worker class like this:
+
+python -m gunicorn myproject.asgi:application -k uvicorn.workers.UvicornWorker
+
+Deployment checklist¶
+The internet is a hostile environment. Before deploying your Django project, you should take some time to review your settings, with security, performance, and operations in mind.
+
+Django includes many security features. Some are built-in and always enabled. Others are optional because they aren’t always appropriate, or because they’re inconvenient for development. For example, forcing HTTPS may not be suitable for all websites, and it’s impractical for local development.
+
+Performance optimizations are another category of trade-offs with convenience. For instance, caching is useful in production, less so for local development. Error reporting needs are also widely different.
+
+The following checklist includes settings that:
+
+must be set properly for Django to provide the expected level of security;
+are expected to be different in each environment;
+enable optional security features;
+enable performance optimizations;
+provide error reporting.
+Many of these settings are sensitive and should be treated as confidential. If you’re releasing the source code for your project, a common practice is to publish suitable settings for development, and to use a private settings module for production.
+
+Run manage.py check --deploy¶
+Some of the checks described below can be automated using the check --deploy option. Be sure to run it against your production settings file as described in the option’s documentation.
+
+Critical settings¶
+SECRET_KEY¶
+The secret key must be a large random value and it must be kept secret.
+
+Make sure that the key used in production isn’t used anywhere else and avoid committing it to source control. This reduces the number of vectors from which an attacker may acquire the key.
+
+Instead of hardcoding the secret key in your settings module, consider loading it from an environment variable:
+
+import os
+
+SECRET_KEY = os.environ["SECRET_KEY"]
+or from a file:
+
+with open("/etc/secret_key.txt") as f:
+    SECRET_KEY = f.read().strip()
+If rotating secret keys, you may use SECRET_KEY_FALLBACKS:
+
+import os
+
+SECRET_KEY = os.environ["CURRENT_SECRET_KEY"]
+SECRET_KEY_FALLBACKS = [
+    os.environ["OLD_SECRET_KEY"],
+]
+Ensure that old secret keys are removed from SECRET_KEY_FALLBACKS in a timely manner.
+
+Changed in Django 4.1:
+The SECRET_KEY_FALLBACKS setting was added to support rotating secret keys.
+
+DEBUG¶
+You must never enable debug in production.
+
+You’re certainly developing your project with DEBUG = True, since this enables handy features like full tracebacks in your browser.
+
+For a production environment, though, this is a really bad idea, because it leaks lots of information about your project: excerpts of your source code, local variables, settings, libraries used, etc.
+
+Environment-specific settings¶
+ALLOWED_HOSTS¶
+When DEBUG = False, Django doesn’t work at all without a suitable value for ALLOWED_HOSTS.
+
+This setting is required to protect your site against some CSRF attacks. If you use a wildcard, you must perform your own validation of the Host HTTP header, or otherwise ensure that you aren’t vulnerable to this category of attacks.
+
+You should also configure the web server that sits in front of Django to validate the host. It should respond with a static error page or ignore requests for incorrect hosts instead of forwarding the request to Django. This way you’ll avoid spurious errors in your Django logs (or emails if you have error reporting configured that way). For example, on nginx you might set up a default server to return “444 No Response” on an unrecognized host:
+
+server {
+    listen 80 default_server;
+    return 444;
+}
+CACHES¶
+If you’re using a cache, connection parameters may be different in development and in production. Django defaults to per-process local-memory caching which may not be desirable.
+
+Cache servers often have weak authentication. Make sure they only accept connections from your application servers.
+
+DATABASES¶
+Database connection parameters are probably different in development and in production.
+
+Database passwords are very sensitive. You should protect them exactly like SECRET_KEY.
+
+For maximum security, make sure database servers only accept connections from your application servers.
+
+If you haven’t set up backups for your database, do it right now!
+
+EMAIL_BACKEND and related settings¶
+If your site sends emails, these values need to be set correctly.
+
+By default, Django sends email from webmaster@localhost and root@localhost. However, some mail providers reject email from these addresses. To use different sender addresses, modify the DEFAULT_FROM_EMAIL and SERVER_EMAIL settings.
+
+STATIC_ROOT and STATIC_URL¶
+Static files are automatically served by the development server. In production, you must define a STATIC_ROOT directory where collectstatic will copy them.
+
+See How to manage static files (e.g. images, JavaScript, CSS) for more information.
+
+MEDIA_ROOT and MEDIA_URL¶
+Media files are uploaded by your users. They’re untrusted! Make sure your web server never attempts to interpret them. For instance, if a user uploads a .php file, the web server shouldn’t execute it.
+
+Now is a good time to check your backup strategy for these files.
+
+HTTPS¶
+Any website which allows users to log in should enforce site-wide HTTPS to avoid transmitting access tokens in clear. In Django, access tokens include the login/password, the session cookie, and password reset tokens. (You can’t do much to protect password reset tokens if you’re sending them by email.)
+
+Protecting sensitive areas such as the user account or the admin isn’t sufficient, because the same session cookie is used for HTTP and HTTPS. Your web server must redirect all HTTP traffic to HTTPS, and only transmit HTTPS requests to Django.
+
+Once you’ve set up HTTPS, enable the following settings.
+
+CSRF_COOKIE_SECURE¶
+Set this to True to avoid transmitting the CSRF cookie over HTTP accidentally.
+
+SESSION_COOKIE_SECURE¶
+Set this to True to avoid transmitting the session cookie over HTTP accidentally.
+
+Performance optimizations¶
+Setting DEBUG = False disables several features that are only useful in development. In addition, you can tune the following settings.
+
+Sessions¶
+Consider using cached sessions to improve performance.
+
+If using database-backed sessions, regularly clear old sessions to avoid storing unnecessary data.
+
+CONN_MAX_AGE¶
+Enabling persistent database connections can result in a nice speed-up when connecting to the database accounts for a significant part of the request processing time.
+
+This helps a lot on virtualized hosts with limited network performance.
+
+TEMPLATES¶
+Enabling the cached template loader often improves performance drastically, as it avoids compiling each template every time it needs to be rendered. When DEBUG = False, the cached template loader is enabled automatically. See django.template.loaders.cached.Loader for more information.
+
+Error reporting¶
+By the time you push your code to production, it’s hopefully robust, but you can’t rule out unexpected errors. Thankfully, Django can capture errors and notify you accordingly.
+
+LOGGING¶
+Review your logging configuration before putting your website in production, and check that it works as expected as soon as you have received some traffic.
+
+See Logging for details on logging.
+
+ADMINS and MANAGERS¶
+ADMINS will be notified of 500 errors by email.
+
+MANAGERS will be notified of 404 errors. IGNORABLE_404_URLS can help filter out spurious reports.
+
+See How to manage error reporting for details on error reporting by email.
+
+Error reporting by email doesn’t scale very well
+
+Consider using an error monitoring system such as Sentry before your inbox is flooded by reports. Sentry can also aggregate logs.
+
+Customize the default error views¶
+Django includes default views and templates for several HTTP error codes. You may want to override the default templates by creating the following templates in your root template directory: 404.html, 500.html, 403.html, and 400.html. The default error views that use these templates should suffice for 99% of web applications, but you can customize them as well.
