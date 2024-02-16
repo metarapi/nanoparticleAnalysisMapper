@@ -16,3 +16,19 @@ pip install -r requirements.txt
 ## Running the Project
 
 To run the project, use the provided batch script.
+
+## 
+
+## Docker image and building
+
+To build a Docker image, simply execute the following command:
+
+```sh
+docker build -t np-analysis-mapper-image .
+```
+
+The dependencies required for this project are precompiled for both Windows-amd64 and Linux-amd64 architectures. Additionally, a Docker image tailored for Linux environments is readily available [here](https://hub.docker.com/repository/docker/metarapi/nanoparticle-analysis-mapper/general), allowing for deployment and execution.
+
+## Example dataset
+
+If you're itching to dive in and try it out, we've got you covered with a sample dataset [here](https://dino64s.duckdns.org/s/bz8waMP6KPBpFHA). It's ready to roll and should give you some solid results for testing.
