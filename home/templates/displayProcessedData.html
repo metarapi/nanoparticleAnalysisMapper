@@ -91,10 +91,10 @@
                         </form>
                     </td>
                     <td class="align-middle">
-                        <form method="post" action="{% url 'delete_experiment' experiment.id %}">
+                        <form method="post" action="{% url 'download_csv' experiment.id %}">
                             {% csrf_token %}
                             <input type="hidden" name="experiment_id" value="{{ experiment.id }}">
-                            <button id="removeEntry" class="btn btn-success" type="submit" {% if not experiment.processed %}disabled{% endif %}>Download Images</button>
+                            <button id="downloadCSV" class="btn btn-success" type="submit" {% if not experiment.processed %}disabled{% endif %}>Download Processed Data</button>
                         </form>
                     </td>
                 </td>

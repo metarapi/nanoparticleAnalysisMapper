@@ -14,4 +14,5 @@ urlpatterns = [
     path('display_experiment/<int:experiment_id>/', views.display_experiment, name='display_experiment'),
     path('process_sse_view/', views.process_sse_view, name='process_sse_view'),
     path('upload_sse_view/', views.upload_sse_view, name='upload_sse_view'),
+    path('download_csv/<int:experiment_id>/', views.download_csv, name='download_csv'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

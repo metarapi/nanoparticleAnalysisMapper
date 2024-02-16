@@ -4,7 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.core.cache import cache
 
 # For SSE (Server Sent Events)
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, FileResponse
 from django.http.response import StreamingHttpResponse
 import asyncio
 
@@ -17,8 +17,10 @@ from django.views.generic.edit import FormView
 # Forms for importing data
 from .forms import CSVFile, CSVFilesForm, ExperimentForm
 from .models import Experiment
+import zipfile
 import shutil
 import os
+import numpy as np
 
 from datetime import datetime
 
@@ -210,3 +212,40 @@ def display_experiment(request, experiment_id):
             messages.warning(request, 'File not found')
             return redirect('home_view')
 
+
+def download_csv(request, experiment_id):
+    labels = ['<20 nm', '21-30 nm', '31-40 nm', '41-50 nm', '51-60 nm', '61-70 nm', '71-80 nm', '81-90 nm', '91-100 nm', '>100 nm']
+
+    experiment = Experiment.objects.get(id=experiment_id)
+    numpy_file = experiment.numpy_file.path  # Get the path from the model
+
+    if os.path.exists(numpy_file):  # Check if the numpy file exists
+        data = np.load(numpy_file)
+        npTotalMap = data['npTotalMap']
+        filtered_maps_list = [data['arr_%d' % i] for i in range(len(data.files) - 4)]  # Adjust this based on the number of non-filtered_maps arrays
+
+        # Save the npTotalMap array as a .csv file
+        np.savetxt('npTotalMap.csv', npTotalMap, delimiter=',')
+
+        # Save each filtered map as a .csv file named after the corresponding label
+        for label, filtered_map in zip(labels, filtered_maps_list):
+            np.savetxt(f'{label}.csv', filtered_map, delimiter=',')
+
+        # Create a ZipFile objectw
+        with zipfile.ZipFile(f'{experiment.name}.zip', 'w') as zipf:
+            # Add the npTotalMap.csv file to the zip
+            zipf.write('npTotalMap.csv')
+
+            # Add each filtered map .csv file to the zip
+            for label in labels:
+                zipf.write(f'{label}.csv')
+
+        # Create a response
+        response = FileResponse(open(f'{experiment.name}.zip', 'rb'), content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename={experiment.name}.zip'
+
+        return response
+
+    else:
+        messages.warning(request, 'File not found')
+        return redirect('home_view')

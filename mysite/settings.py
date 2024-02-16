@@ -159,5 +159,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = 'mysite.asgi.application'
 
 
-FILE_UPLOAD_TEMP_DIR = 'C:/Users/D04Server/Documents/NPAnalysisMapper/TMP Files'
+#FILE_UPLOAD_TEMP_DIR = 'C:/Users/D04Server/Documents/NPAnalysisMapper/TMP Files'
+FILE_UPLOAD_TEMP_DIR = BASE_DIR / 'tmp'
 DATA_UPLOAD_MAX_NUMBER_FILES = 1000

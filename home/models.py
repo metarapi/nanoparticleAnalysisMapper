@@ -6,7 +6,9 @@ import os
 def experiment_csv_upload_path(instance, filename):
     # instance is the CSVFile object, and filename is the original CSV file name
     # Create a folder with the experiment name and keep the original file name
-    return os.path.join('datasets/csv_files/', instance.experiment.name, filename)
+    upload_path = os.path.join('datasets/csv_files/', instance.experiment.name)
+    os.makedirs(upload_path, exist_ok=True)
+    return os.path.join(upload_path, filename)
 
 class Experiment(models.Model):
     name = models.CharField(max_length=255, unique=True)
