@@ -27,7 +27,7 @@ To build a Docker image, simply execute the following command:
 docker build -t np-analysis-mapper-image .
 ```
 
-The dependencies required for this project are precompiled for both Windows-amd64 and Linux-amd64 architectures. Additionally, a Docker image tailored for Linux environments is readily available [here](https://hub.docker.com/repository/docker/metarapi/nanoparticle-analysis-mapper/general), allowing for deployment and execution.
+The dependencies required for this project are precompiled for both Windows-amd64 and Linux-amd64 architectures. Additionally, a Docker image tailored for Linux environments is readily available [here](https://hub.docker.com/r/metarapi/nanoparticle-analysis-mapper/tags), allowing for deployment and execution.
 
 ## Example dataset
 
