@@ -29,6 +29,10 @@ docker build -t np-analysis-mapper-image .
 
 The dependencies required for this project are precompiled for both Windows-amd64 and Linux-amd64 architectures. Additionally, a Docker image tailored for Linux environments is readily available [here](https://hub.docker.com/r/metarapi/nanoparticle-analysis-mapper/tags), allowing for deployment and execution.
 
+```sh
+docker pull metarapi/nanoparticle-analysis-mapper:v1.0
+```
+
 ## Example dataset
 
 If you're itching to dive in and try it out, we've got you covered with a sample dataset [here](https://dino64s.duckdns.org/s/bz8waMP6KPBpFHA). It's ready to roll and should give you some solid results for testing.
