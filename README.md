@@ -13,10 +13,6 @@ This project uses pip and Python. To install the necessary dependencies, run the
 pip install -r requirements.txt
 ```
 
-## Running the Project
-
-To run the project, use the provided batch script.
-
 ## 
 
 ## Docker image and building
